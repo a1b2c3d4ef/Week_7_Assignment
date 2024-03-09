@@ -4,13 +4,16 @@ using UnityEngine;
 
 public class Player_script : MonoBehaviour
 {
-    [SerializeField] private float movementSpeed, jumpForce, groundCheckDistance;
+    [SerializeField] private float movementSpeed, rotateSpeed, jumpForce, groundCheckDistance;
     [SerializeField] private Animator animator;
+    public Stat_script stat;
     private Rigidbody rb;
+    private bool isOnGround;
 
     private void Start()
     {
         rb = GetComponent<Rigidbody>();
+        stat.ResetAll();
     }
     private void Update()
     {
@@ -22,22 +25,23 @@ public class Player_script : MonoBehaviour
         float inputX = Input.GetAxisRaw("Horizontal");
         float inputY = Input.GetAxisRaw("Vertical");
 
-        rb.velocity = new Vector3(inputX * movementSpeed, rb.velocity.y, inputY * movementSpeed);
+        rb.velocity = Vector3.up * rb.velocity.y + transform.forward * inputY * movementSpeed;
+        transform.eulerAngles += Vector3.up * inputX * rotateSpeed;
         animator.SetFloat("inputX", inputX);
         animator.SetFloat("inputY", inputY);
     }
     private void Jump()
     {
-        print(Physics.Raycast(transform.position, Vector3.down, groundCheckDistance));
-        if (Input.GetKeyDown(KeyCode.Space) && Physics.Raycast(transform.position + Vector3.up * 0.5f, Vector3.down, groundCheckDistance))
+        if (Input.GetKeyDown(KeyCode.Space) && isOnGround)
         {
+            isOnGround = false;
             rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
             animator.SetTrigger("jump");
         }
     }
-    private void OnDrawGizmos()
+    private void OnCollisionEnter(Collision collision)
     {
-        Gizmos.color = Color.yellow;
-        Gizmos.DrawLine(transform.position + Vector3.up * 0.5f, transform.position + Vector3.down * groundCheckDistance);
+        if (Physics.Raycast(transform.position + Vector3.up * 0.5f, Vector3.down, groundCheckDistance))
+            isOnGround = true;
     }
 }
